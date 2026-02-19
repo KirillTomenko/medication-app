@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отслеживание Медикаментов</title>
+    <style>
+        :root {
+            --color-primary: #2196F3;
+            --color-success: #4CAF50;
+            --color-error: #f44336;
+            --color-bg: #f5f5f5;
+            --color-surface: #ffffff;
+            --color-text: #212121;
+            --color-text-secondary: #757575;
+            --color-border: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: var(--color-primary);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 24px;
+            background: var(--color-surface);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .day-header {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            padding: 8px 0;
+            text-transform: uppercase;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            position: relative;
+            background: var(--color-bg);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .day-cell.other-month {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .day-cell:not(.other-month):hover {
+            transform: scale(1.05);
+        }
+
+        .day-cell.success {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .day-cell.partial {
+            background: #FF9800;
+            color: white;
+        }
+
+        .day-cell.selected {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+        }
+
+        .medications {
+            background: var(--color-surface);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .medications h2 {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .med-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--color-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .med-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .med-item:hover {
+            background: #e8e8e8;
+        }
+
+        .med-item.taken {
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .med-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--color-border);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .med-item.taken .med-checkbox {
+            background: var(--color-success);
+            border-color: var(--color-success);
+            color: white;
+        }
+
+        .med-name {
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .med-time {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .comments-section {
+            background: var(--color-surface);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .comments-section h2 {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .comment-hint {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 8px;
+        }
+
+        .month-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            background: var(--color-surface);
+            padding: 12px 16px;
+            border-radius: 12px;
+        }
+
+        .month-nav button {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .month-nav button:hover {
+            background: #1976D2;
+        }
+
+        .month-nav h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .notification-banner {
+            background: var(--color-primary);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .settings-section {
+            background: var(--color-surface);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .settings-section h2 {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .sync-button {
+            background: var(--color-success);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .sync-button:hover {
+            background: #45a049;
+        }
+
+        .sync-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .sync-status {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .webhook-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: monospace;
+            margin-bottom: 8px;
+            transition: border-color 0.2s ease;
+            background-color: #f0f0f0;
+            color: #666;
+        }
+
+        .webhook-hint {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .webhook-hint a {
+            color: var(--color-primary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .notification-settings {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .toggle-checkbox {
+            width: 44px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border: none;
+            padding: 0;
+        }
+
+        .toggle-checkbox.active {
+            background: var(--color-success);
+        }
+
+        .toggle-checkbox::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s ease;
+        }
+
+        .toggle-checkbox.active::after {
+            left: 22px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💊 Медикаменты</h1>
+            <p>Отслеживание ежедневного приёма препаратов</p>
+        </div>
+
+        <div class="notification-banner" id="notificationBanner" style="display: none;"></div>
+
+        <div class="month-nav">
+            <button onclick="previousMonth()">← Назад</button>
+            <h3 id="monthYear"></h3>
+            <button onclick="nextMonth()">Вперед →</button>
+        </div>
+
+        <div class="calendar" id="calendar"></div>
+
+        <div class="medications">
+            <h2>📋 Препараты на <span id="selectedDate"></span></h2>
+            <div id="medicationsList"></div>
+        </div>
+
+        <div class="comments-section">
+            <h2>📝 Заметка</h2>
+            <textarea
+                class="comment-input"
+                id="commentInput"
+                maxlength="50"
+                placeholder="Ваше состояние, самочувствие..."
+                rows="3"></textarea>
+            <div class="comment-hint" id="commentHint">0 / 50 символов</div>
+        </div>
+
+        <div class="settings-section">
+            <h2>⚙️ Уведомления</h2>
+            <div class="notification-settings">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notificationToggle" checked style="display:none;">
+                    <button class="toggle-checkbox active" id="toggleButton" onclick="toggleNotifications()"></button>
+                    <span id="notifLabel">Включены</span>
+                </label>
+            </div>
+            <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0;">
+                🔔 Уведомления в 07:30 и 21:00 (требует разрешение браузера)
+            </p>
+        </div>
+
+        <div class="settings-section">
+            <h2>☁️ Google Sheets синхронизация</h2>
+            <div class="webhook-hint">
+                📋 Укажите URL вебхука Apps Script для синхронизации данных. <a onclick="showGoogleSheetsInstructions()">Как создать?</a>
+            </div>
+            <input
+                type="text"
+                class="webhook-input"
+                id="webhookUrl"
+                placeholder="https://script.google.com/macros/s/..."
+                disabled
+            >
+            <button class="sync-button" onclick="editWebhookUrl()" style="background: #1976D2; margin-bottom: 4px;">
+                ✏️ Изменить URL
+            </button>
+            <button class="sync-button" id="syncButton" onclick="syncToGoogleSheets()">
+                📤 Синхронизировать
+            </button>
+            <div class="sync-status" id="syncStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Конфигурация препаратов ─────────────────────────────────────────
+        const medications = [
+            { id: 1, name: 'Препарат A', time: '09:00' },
+            { id: 2, name: 'Препарат B', time: '09:00' }
+        ];
+
+        // ─── Состояние приложения ─────────────────────────────────────────────
+        let currentDate  = new Date();
+        let selectedDate = new Date();
+        let data         = loadData();
+
+        // Загружаем webhookUrl из localStorage (без захардкоженного значения)
+        let webhookUrl = localStorage.getItem('webhookUrl') || '';
+
+        // Уведомления включены по умолчанию, если пользователь явно не выключил
+        let notificationsEnabled = localStorage.getItem('notificationsEnabled') !== 'false';
+
+        // Таймер для debounce комментария
+        let commentDebounceTimer = null;
+
+        // ─── Инициализация ────────────────────────────────────────────────────
+        function init() {
+            renderCalendar();
+            renderMedications();
+            setupNotifications();
+            setupCommentListener();
+            checkDailyReminder();
+            setupServiceWorker();
+            loadSettings();
+            scheduleNotifications();
+        }
+
+        // ─── Хранение данных ──────────────────────────────────────────────────
+        function loadData() {
+            try {
+                const stored = localStorage.getItem('medicationData');
+                return stored ? JSON.parse(stored) : {};
+            } catch (e) {
+                console.error('Ошибка загрузки данных:', e);
+                return {};
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('medicationData', JSON.stringify(data));
+        }
+
+        function getDateKey(date) {
+            // Используем локальную дату чтобы избежать сдвига по UTC
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // ─── Календарь ────────────────────────────────────────────────────────
+        function renderCalendar() {
+            const year  = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('monthYear').textContent =
+                new Date(year, month).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+            let firstDay = new Date(year, month, 1).getDay();
+            firstDay = (firstDay === 0) ? 6 : firstDay - 1; // Неделя с понедельника
+
+            const daysInMonth     = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+
+            // Заголовки дней
+            ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.textContent = day;
+                calendar.appendChild(header);
+            });
+
+            // Дни предыдущего месяца
+            for (let i = firstDay - 1; i >= 0; i--) {
+                calendar.appendChild(createDayCell(daysInPrevMonth - i, true));
+            }
+
+            // Дни текущего месяца
+            for (let day = 1; day <= daysInMonth; day++) {
+                calendar.appendChild(createDayCell(day, false));
+            }
+
+            // Дни следующего месяца (до 42 ячеек)
+            const filledCells = firstDay + daysInMonth;
+            const remaining   = filledCells <= 35 ? 35 - filledCells : 42 - filledCells;
+            for (let day = 1; day <= remaining; day++) {
+                calendar.appendChild(createDayCell(day, true));
+            }
+        }
+
+        function createDayCell(day, isOtherMonth) {
+            const cell = document.createElement('div');
+
+            if (isOtherMonth) {
+                cell.className = 'day-cell other-month';
+                cell.textContent = day;
+                return cell;
+            }
+
+            const date    = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            const dateKey = getDateKey(date);
+            const dayData = data[dateKey] || {};
+
+            const allTaken  = medications.every(med => dayData[med.id]);
+            const someTaken = medications.some(med => dayData[med.id]);
+
+            cell.textContent = day;
+            cell.className = 'day-cell';
+
+            if (allTaken) {
+                cell.classList.add('success');
+            } else if (someTaken) {
+                cell.classList.add('partial');
+            }
+
+            if (getDateKey(selectedDate) === dateKey) {
+                cell.classList.add('selected');
+            }
+
+            cell.onclick = () => selectDate(date);
+            return cell;
+        }
+
+        function selectDate(date) {
+            selectedDate = new Date(date);
+            renderCalendar();
+            renderMedications();
+        }
+
+        // ─── Список препаратов ────────────────────────────────────────────────
+        function renderMedications() {
+            const dateKey = getDateKey(selectedDate);
+            const dayData = data[dateKey] || {};
+
+            document.getElementById('selectedDate').textContent =
+                selectedDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+
+            const list = document.getElementById('medicationsList');
+            list.innerHTML = '';
+
+            medications.forEach(med => {
+                const taken = dayData[med.id] || false;
+                const item  = document.createElement('div');
+                item.className = `med-item ${taken ? 'taken' : ''}`;
+                item.innerHTML = `
+                    <div class="med-checkbox">${taken ? '✓' : ''}</div>
+                    <div>
+                        <div class="med-name">${med.name}</div>
+                        <div class="med-time">⏰ ${med.time}</div>
+                    </div>
+                `;
+                item.onclick = () => toggleMedication(med.id, dateKey);
+                list.appendChild(item);
+            });
+
+            loadComment(dateKey);
+        }
+
+        function toggleMedication(medId, dateKey) {
+            if (!data[dateKey]) data[dateKey] = {};
+            data[dateKey][medId] = !data[dateKey][medId];
+            saveData();
+            renderCalendar();
+            renderMedications();
+
+            // Автосинк только для текущего дня и при наличии URL
+            if (webhookUrl && dateKey === getDateKey(new Date())) {
+                debouncedSync(1000);
+            }
+        }
+
+        // ─── Комментарии ──────────────────────────────────────────────────────
+        function setupCommentListener() {
+            const input = document.getElementById('commentInput');
+
+            input.addEventListener('input', (e) => {
+                const text    = e.target.value;
+                const dateKey = getDateKey(selectedDate);
+
+                document.getElementById('commentHint').textContent = `${text.length} / 50 символов`;
+
+                if (!data[dateKey]) data[dateKey] = {};
+                data[dateKey].comment = text;
+                saveData();
+
+                // Debounce: синхронизируем не чаще чем раз в 2 секунды после остановки ввода
+                if (webhookUrl && dateKey === getDateKey(new Date())) {
+                    debouncedSync(2000);
+                }
+            });
+        }
+
+        function loadComment(dateKey) {
+            const comment = data[dateKey]?.comment || '';
+            document.getElementById('commentInput').value = comment;
+            document.getElementById('commentHint').textContent = `${comment.length} / 50 символов`;
+        }
+
+        // ─── Навигация по месяцам ─────────────────────────────────────────────
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // ─── Уведомления ──────────────────────────────────────────────────────
+        function setupNotifications() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function toggleNotifications() {
+            notificationsEnabled = !notificationsEnabled;
+            localStorage.setItem('notificationsEnabled', notificationsEnabled);
+
+            const btn   = document.getElementById('toggleButton');
+            const label = document.getElementById('notifLabel');
+
+            btn.classList.toggle('active', notificationsEnabled);
+            label.textContent = notificationsEnabled ? 'Включены' : 'Выключены';
+
+            if (notificationsEnabled && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function scheduleNotifications() {
+            setInterval(() => {
+                if (!notificationsEnabled || Notification.permission !== 'granted') return;
+
+                const now     = new Date();
+                const hours   = now.getHours();
+                const minutes = now.getMinutes();
+
+                if ((hours === 7 && minutes === 30) || (hours === 21 && minutes === 0)) {
+                    const todayKey  = getDateKey(new Date());
+                    const todayData = data[todayKey] || {};
+                    const allTaken  = medications.every(med => todayData[med.id]);
+
+                    if (!allTaken) {
+                        sendNotification(hours === 7 ? 'утро' : 'вечер');
+                    }
+                }
+            }, 60000);
+        }
+
+        function sendNotification(time) {
+            if (Notification.permission === 'granted') {
+                new Notification('💊 Напоминание о медикаментах', {
+                    body: `Время приёма медикаментов (${time})`,
+                    tag:  'medication-reminder'
+                });
+            }
+        }
+
+        function checkDailyReminder() {
+            const now   = new Date();
+            const hours = now.getHours();
+
+            if (hours >= 7 && hours < 10) {
+                const todayKey  = getDateKey(new Date());
+                const todayData = data[todayKey] || {};
+                const allTaken  = medications.every(med => todayData[med.id]);
+
+                if (!allTaken) {
+                    const banner = document.getElementById('notificationBanner');
+                    banner.textContent = '🌅 Доброе утро! Пожалуйста, отметьте приём медикаментов.';
+                    banner.style.display = 'block';
+                }
+            }
+        }
+
+        // Service Worker не используется — уведомления работают через Notification API напрямую
+        function setupServiceWorker() {}
+
+        // ─── Настройки ────────────────────────────────────────────────────────
+        function loadSettings() {
+            const btn    = document.getElementById('toggleButton');
+            const label  = document.getElementById('notifLabel');
+            const urlInput = document.getElementById('webhookUrl');
+
+            btn.classList.toggle('active', notificationsEnabled);
+            label.textContent = notificationsEnabled ? 'Включены' : 'Выключены';
+            urlInput.value = webhookUrl;
+        }
+
+        function editWebhookUrl() {
+            const newUrl = prompt(
+                'Введите URL вашего Google Apps Script вебхука:\n\nПример:\nhttps://script.google.com/macros/s/YOUR-ID/exec',
+                webhookUrl
+            );
+
+            if (newUrl !== null) {
+                webhookUrl = newUrl.trim();
+                localStorage.setItem('webhookUrl', webhookUrl);
+                document.getElementById('webhookUrl').value = webhookUrl;
+                showSyncStatus(webhookUrl ? '✅ URL сохранён' : '🗑️ URL очищен', 2000);
+            }
+        }
+
+        // ─── Синхронизация с Google Sheets ───────────────────────────────────
+        // Debounce-обёртка для автосинка
+        function debouncedSync(delay) {
+            clearTimeout(commentDebounceTimer);
+            commentDebounceTimer = setTimeout(() => syncToGoogleSheets(), delay);
+        }
+
+        async function syncToGoogleSheets() {
+            if (!webhookUrl) {
+                showSyncStatus('❌ Укажите URL вебхука', 3000);
+                return;
+            }
+
+            const button = document.getElementById('syncButton');
+            button.disabled = true;
+            showSyncStatus('⏳ Синхронизация...');
+
+            const dateKey = getDateKey(selectedDate);
+            // FIX: todayData теперь объявляется как отдельная переменная (критический баг исправлен)
+            const todayData = data[dateKey] || {};
+
+            const payload = {
+                date:    dateKey,
+                med1:    !!todayData[1],
+                med2:    !!todayData[2],
+                comment: todayData.comment || ''
+            };
+
+            try {
+                // FIX: mode 'no-cors' — обязателен для Google Apps Script, иначе браузер блокирует запрос
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    mode:   'no-cors', // Google Apps Script не поддерживает CORS preflight
+                    headers: { 'Content-Type': 'application/json' },
+                    body:   JSON.stringify(payload)
+                });
+
+                // При no-cors ответ всегда opaque — считаем успехом если нет исключения
+                showSyncStatus('✅ Данные отправлены', 3000);
+
+            } catch (error) {
+                showSyncStatus('❌ Ошибка подключения', 3000);
+                console.error('Sync error:', error);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function showSyncStatus(message, duration = 0) {
+            const status = document.getElementById('syncStatus');
+            status.textContent = message;
+            if (duration) {
+                setTimeout(() => { status.textContent = ''; }, duration);
+            }
+        }
+
+        // ─── Инструкция по Google Sheets ─────────────────────────────────────
+        function showGoogleSheetsInstructions() {
+            alert(`📋 КАК НАСТРОИТЬ GOOGLE SHEETS:
+
+1. Откройте Google Sheets → Расширения → Apps Script
+2. Удалите весь код и вставьте:
+
+function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSheet();
+    var data  = JSON.parse(e.postData.contents);
+    sheet.appendRow([
+      data.date,
+      data.med1    ? '✅' : '❌',
+      data.med2    ? '✅' : '❌',
+      data.comment || ''
+    ]);
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'success' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+3. Нажмите «Развернуть» → «Новое развертывание»
+4. Тип: Веб-приложение
+5. Выполнять как: Я (ваш аккаунт)
+6. Кто имеет доступ: Все
+7. Скопируйте URL (заканчивается на /exec, не /dev!)
+8. Нажмите «✏️ Изменить URL» и вставьте скопированный URL
+
+⚠️ После любых изменений в коде создавайте НОВОЕ развертывание!`);
+        }
+
+        // ─── Запуск ───────────────────────────────────────────────────────────
+        init();
+    </script>
+</body>
+</html>
